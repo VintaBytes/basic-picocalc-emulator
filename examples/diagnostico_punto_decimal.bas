@@ -1,0 +1,17 @@
+' DIAGNOSTICO DE PUNTO DECIMAL PARA BASIC PICOCALC LINUX
+' Independiente de la calculadora
+OPTION BASE 1
+PRINT "DIAGNOSTICO DECIMALES"
+s$="12.5"
+PRINT "CADENA=[";s$;"] LEN=";LEN(s$)
+PRINT "INSTR punto=";INSTR(s$,".")
+FOR i=1 TO LEN(s$)
+  c$=MID$(s$,i,1)
+  PRINT "POS ";i;" C=[";c$;"] ASC=";ASC(c$)
+  IF c$="." THEN PRINT " COINCIDE PUNTO POR TEXTO"
+  IF ASC(c$)=46 THEN PRINT " COINCIDE PUNTO POR ASCII"
+NEXT i
+PRINT "ENT=[";LEFT$(s$,INSTR(s$,".")-1);"]"
+PRINT "FRAC=[";MID$(s$,INSTR(s$,".")+1);"]"
+PRINT "READY"
+END

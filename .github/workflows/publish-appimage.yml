@@ -1,0 +1,100 @@
+name: Build Linux AppImage (manual release only)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-appimage.yml'
+      - 'packaging/appimage/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pico-basic-0.3.10-dev0-release
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Linux Qt runtime dependencies
+        timeout-minutes: 8
+        run: |
+          sudo apt-get -o Acquire::Retries=0 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
+          sudo apt-get install -y libegl1 libgl1 libopengl0 libxkbcommon-x11-0 libxcb-cursor0 libxcb-xinerama0 libxcb-keysyms1 libxcb-icccm4 libxcb-shape0
+
+      - name: Install test environment
+        run: python -m pip install -e '.[gui,test]'
+
+      - name: Check Python source syntax
+        run: python -m compileall -q src scripts tests tools
+
+      - name: Run regression tests
+        run: python -m pytest -q
+
+      - name: Preflight bundled license texts
+        run: |
+          mkdir -p build/license-preflight/usr/bin/basic-picocalc/_internal
+          python packaging/appimage/prepare_licenses.py "$PWD" "$PWD/build/license-preflight"
+          test -s build/license-preflight/usr/share/doc/basic-picocalc/BUNDLED_LICENSES.md
+
+      - name: Build AppImage
+        run: bash packaging/appimage/build.sh
+
+      - name: Validate AppImage and bundled notices
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact="BASIC-PicoCalc-Emulator-0.3.10.dev0-x86_64.AppImage"
+          test -s "dist/$artifact"
+          APPIMAGE_EXTRACT_AND_RUN=1 "dist/$artifact" --help >/dev/null
+          mkdir -p build/release-audit
+          cd build/release-audit
+          "$GITHUB_WORKSPACE/dist/$artifact" --appimage-extract > /dev/null
+          notices="squashfs-root/usr/share/doc/basic-picocalc"
+          for f in LICENSE-MIT.txt THIRD_PARTY_NOTICES.md PicoMite-V6.03.00-Version.h BUNDLED_LICENSES.md; do
+            test -s "$notices/$f" || { echo "Missing license notice: $f" >&2; exit 1; }
+          done
+          test -d "$notices/licenses"
+          files="$(find "$notices/licenses" -type f | wc -l)"
+          test "$files" -ge 4 || { echo "Too few bundled license texts: $files" >&2; exit 1; }
+          if find squashfs-root/usr/bin/basic-picocalc -iname '*virtualkeyboard*' | grep -q .; then
+            echo "ERROR: Qt Virtual Keyboard still bundled." >&2
+            exit 1
+          fi
+
+      - name: Generate verified checksum
+        run: |
+          cd dist
+          sha256sum BASIC-PicoCalc-Emulator-0.3.10.dev0-x86_64.AppImage > SHA256SUMS
+          cat SHA256SUMS
+
+      # Normal pushes build and verify, but must never mutate an existing release.
+      - name: Publish new development release (manual action only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v0.3.10-dev.0"
+          artifact="dist/BASIC-PicoCalc-Emulator-0.3.10.dev0-x86_64.AppImage"
+          notes="docs/releases/0.3.10-dev.0.md"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "ERROR: release $tag already exists. Releases are immutable; bump the version and tag before publishing again." >&2
+            exit 1
+          fi
+          gh release create "$tag" "$artifact" dist/SHA256SUMS --title "PicoCalc BASIC 0.3.10-dev.0 (Linux x86_64)" --notes-file "$notes" --prerelease --latest=false --target "$GITHUB_SHA"

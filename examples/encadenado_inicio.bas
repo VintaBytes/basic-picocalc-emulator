@@ -1,0 +1,5 @@
+PRINT "PRIMER PROGRAMA"
+DRIVE "B:"
+CHDIR "B:/demos"
+RUN "segundo.bas"
+PRINT "NO DEBE MOSTRARSE"

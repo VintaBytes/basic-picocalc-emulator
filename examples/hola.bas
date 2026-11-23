@@ -1,0 +1,8 @@
+REM Primer ejemplo portable del subconjunto
+PRINT "HOLA DESDE BASIC CDE LINUX"
+FOR I = 1 TO 5
+  PRINT "PASO "; I
+NEXT I
+INPUT "COMO TE LLAMAS? "; NOMBRE$
+PRINT "HOLA "; NOMBRE$
+END

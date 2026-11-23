@@ -1,0 +1,11 @@
+' PLAY TONE - prueba MMBasic 6.00.03
+' Original: no modifica archivos ni unidades A:/B:
+CLS
+PRINT "PLAY TONE 0.2.76"
+PLAY TONE 900,900,70
+PAUSE 250
+PLAY TONE 440,660,350
+PAUSE 500
+PLAY STOP
+PRINT "TONOS OK"
+END

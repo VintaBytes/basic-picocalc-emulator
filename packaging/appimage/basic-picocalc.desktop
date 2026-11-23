@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=BASIC PicoCalc Emulator
+Comment=Emulador educativo de MMBasic para PicoCalc
+Exec=basic-picocalc
+Icon=basic-picocalc
+Terminal=false
+Categories=Development;Education;
+StartupNotify=true

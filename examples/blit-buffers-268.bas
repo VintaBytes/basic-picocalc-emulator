@@ -1,0 +1,11 @@
+' BLIT READ / WRITE / CLOSE: comparacion Linux - PicoCalc 6.0003
+' No requiere archivos ni usa variables con sufijos conflictivos.
+CLS RGB(0,0,0)
+BOX 20,20,40,30,1,RGB(255,255,255),RGB(0,0,255)
+CIRCLE 40,35,12,1,1,RGB(255,255,0),RGB(0,255,0)
+BLIT READ #1,20,20,40,30
+BLIT WRITE #1,100,40
+BLIT WRITE #1,180,100
+TEXT 10,180,"BLIT READ/WRITE OK",,,,,RGB(0,255,0)
+BLIT CLOSE #1
+END

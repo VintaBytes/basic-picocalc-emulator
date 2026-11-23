@@ -1,0 +1,5 @@
+#!/bin/sh
+# Punto de entrada dentro de la AppImage; no cambia el cwd del usuario.
+set -eu
+APPDIR="${APPDIR:-$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)}"
+exec "$APPDIR/usr/bin/basic-picocalc/basic-picocalc" --gui "$@"
